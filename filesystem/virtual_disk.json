@@ -1,0 +1,56 @@
+{
+    "type": "directory",
+    "name": "root",
+    "children": {
+        "Documentos": {
+            "type": "directory",
+            "name": "Documentos",
+            "children": {}
+        },
+        "Descargas": {
+            "type": "directory",
+            "name": "Descargas",
+            "children": {}
+        },
+        "Sistema": {
+            "type": "directory",
+            "name": "Sistema",
+            "children": {}
+        },
+        "ejemplo.txt": {
+            "type": "file",
+            "name": "ejemplo.txt",
+            "content": "Hola mundo desde MiniOS!",
+            "size": 24
+        },
+        "Fotos": {
+            "type": "directory",
+            "name": "Fotos",
+            "children": {
+                "nota.txt": {
+                    "type": "file",
+                    "name": "nota.txt",
+                    "content": "Hola_MiniOS!",
+                    "size": 12
+                }
+            }
+        },
+        "proyecto": {
+            "type": "directory",
+            "name": "proyecto",
+            "children": {}
+        },
+        "hola": {
+            "type": "directory",
+            "name": "hola",
+            "children": {
+                "prueba.txt": {
+                    "type": "file",
+                    "name": "prueba.txt",
+                    "content": "hola profe",
+                    "size": 10
+                }
+            }
+        }
+    }
+}
