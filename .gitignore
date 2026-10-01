@@ -1,7 +1,16 @@
+# Python
 __pycache__/
-*.pyc
-.venv/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Entornos virtuales
 venv/
 env/
-.idea/
-.vscode/
+ENV/
+.env
+
+# Archivos del sistema operativo
+.DS_Store
+Thumbs.db

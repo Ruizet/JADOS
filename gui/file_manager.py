@@ -6,11 +6,11 @@ class FileManager(QWidget):
     def __init__(self, kernel):
         super().__init__()
         self.kernel = kernel
-        self.setWindowTitle("Explorador de Archivos Virtual")
+        self.setWindowTitle("Explorador de Archivos")
         layout = QVBoxLayout(self)
 
         self.tree = QTreeWidget()
-        self.tree.setHeaderLabel("Sistema de Archivos Virtual (Sincronizado)")
+        self.tree.setHeaderLabel("Sistema de Archivos")
         layout.addWidget(self.tree)
 
         # FASE 9: Adiós al botón manual. Hola programación orientada a eventos.

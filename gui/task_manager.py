@@ -1,53 +1,75 @@
 # gui/task_manager.py
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QTableWidget, QTableWidgetItem, QPushButton, QMessageBox
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QTableWidget, QTableWidgetItem, QHeaderView, QLabel, QPushButton, QMessageBox
+from PySide6.QtCore import Qt
 
 class TaskManager(QWidget):
     def __init__(self, kernel):
         super().__init__()
         self.kernel = kernel
         self.setWindowTitle("Administrador de Tareas")
+        
         layout = QVBoxLayout(self)
-
-        self.table = QTableWidget(0, 6) 
-        self.table.setHorizontalHeaderLabels(["PID", "Proceso", "Estado", "Prioridad", "Memoria", "Tiempo"])
+        
+        self.lbl_algo = QLabel("Planificador de CPU: Ninguno")
+        self.lbl_algo.setStyleSheet("font-weight: bold; font-size: 14px; margin-bottom: 10px; color: #2ecc71;")
+        layout.addWidget(self.lbl_algo)
+        
+        self.table = QTableWidget(0, 7)
+        self.table.setHorizontalHeaderLabels(["PID", "Nombre", "Estado", "Llegada", "Ráfaga", "Restante", "Prioridad"])
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
         layout.addWidget(self.table)
+        
+        # --- NUEVO BOTÓN DE TERMINAR ---
+        self.btn_kill = QPushButton("Terminar Proceso Seleccionado")
+        self.btn_kill.setStyleSheet("background-color: #c0392b; color: white; font-weight: bold; padding: 8px;")
+        self.btn_kill.clicked.connect(self.kill_selected_process)
+        layout.addWidget(self.btn_kill)
+        
+        self.kernel.events.subscribe("SYSTEM_TICK", self._refresh_table)
+        self._refresh_table()
 
-        btn_layout = QHBoxLayout()
-        self.btn_kill = QPushButton("Finalizar Proceso")
-        self.btn_kill.clicked.connect(self._kill_selected_process)
-        btn_layout.addWidget(self.btn_kill)
-        layout.addLayout(btn_layout)
-
-        # FASE 9: Nos suscribimos al evento del Kernel en lugar de usar QTimer
-        if self.kernel:
-            self.kernel.events.subscribe("PROCESS_CHANGED", self._refresh_table)
-            self._refresh_table()
+    def kill_selected_process(self):
+        selected = self.table.selectedItems()
+        if not selected: return
+        
+        pid = int(self.table.item(selected[0].row(), 0).text())
+        if pid in self.kernel.process_manager.processes:
+            p = self.kernel.process_manager.processes[pid]
+            if p.state not in ["TERMINATED"]:
+                p.state = "TERMINATED"
+                QMessageBox.information(self, "Proceso Terminado", f"El proceso {p.name} (PID: {p.pid}) ha sido terminado por el usuario.")
+                self._refresh_table()
 
     def _refresh_table(self, data=None):
-        if not self.kernel or not self.kernel.process_manager:
-            return
-            
-        procesos = self.kernel.process_manager.get_all_processes()
+        if self.kernel.process_manager.scheduler:
+            algo_name = self.kernel.process_manager.scheduler.__class__.__name__.replace("Scheduler", "")
+            self.lbl_algo.setText(f"Planificador de CPU activo: {algo_name}")
+        else:
+            self.lbl_algo.setText("Planificador de CPU: No configurado (Usa la Terminal)")
+
+        try: procesos = self.kernel.process_manager.get_all_processes()
+        except AttributeError: procesos = []
+
         self.table.setRowCount(len(procesos))
         
         for row, p in enumerate(procesos):
-            self.table.setItem(row, 0, QTableWidgetItem(str(p.pid)))
-            self.table.setItem(row, 1, QTableWidgetItem(p.name))
-            self.table.setItem(row, 2, QTableWidgetItem(p.state.value))
-            self.table.setItem(row, 3, QTableWidgetItem(str(p.priority)))
-            self.table.setItem(row, 4, QTableWidgetItem(f"{p.memory_required} MB"))
-            self.table.setItem(row, 5, QTableWidgetItem(f"{p.remaining_time} / {p.total_time}"))
+            def _create_item(text):
+                item = QTableWidgetItem(str(text))
+                item.setTextAlignment(Qt.AlignCenter)
+                return item
 
-    def _kill_selected_process(self):
-        selected_items = self.table.selectedItems()
-        if not selected_items:
-            QMessageBox.warning(self, "Error", "Seleccione un proceso primero.")
-            return
+            self.table.setItem(row, 0, _create_item(p.pid))
+            self.table.setItem(row, 1, _create_item(p.name))
             
-        pid = int(self.table.item(selected_items[0].row(), 0).text())
-        response = self.kernel.execute_command("kill", [str(pid)])
-        
-        if "Error" in response:
-            QMessageBox.warning(self, "Error", response)
-        # Ya no forzamos el refresco manual, el Kernel disparará el evento automáticamente.
+            state_item = _create_item(p.state)
+            if p.state == "RUNNING": state_item.setForeground(Qt.green)
+            elif p.state == "TERMINATED": state_item.setForeground(Qt.red)
+            elif p.state == "READY": state_item.setForeground(Qt.blue)
+            self.table.setItem(row, 2, state_item)
+            
+            self.table.setItem(row, 3, _create_item(p.arrival_time))
+            self.table.setItem(row, 4, _create_item(p.burst_time))
+            self.table.setItem(row, 5, _create_item(p.remaining_time))
+            self.table.setItem(row, 6, _create_item(p.priority))

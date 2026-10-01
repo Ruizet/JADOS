@@ -1,30 +1,21 @@
 # process/process.py
-from enum import Enum
-
-class ProcessState(Enum):
-    NEW = "NEW"
-    READY = "READY"
-    RUNNING = "RUNNING"
-    BLOCKED = "BLOCKED"
-    TERMINATED = "TERMINATED"
-
 class Process:
-    def __init__(self, pid: int, name: str, memory_required: int, total_time: int, priority: int = 0):
+    def __init__(self, pid: int, name: str, arrival_time: int, burst_time: int, priority: int = 0, queue_level: int = 0, guaranteed_pct: float = 0.0):
         self.pid = pid
         self.name = name
-        self.state = ProcessState.NEW
+        self.arrival_time = arrival_time
+        self.burst_time = burst_time
         self.priority = priority
-        self.memory_required = memory_required
-        self.total_time = total_time
-        self.remaining_time = total_time
-
-    def to_dict(self):
-        """Devuelve un diccionario con los datos del proceso para facilitar su uso en la GUI."""
-        return {
-            "pid": self.pid,
-            "name": self.name,
-            "state": self.state.value,
-            "priority": self.priority,
-            "memory": self.memory_required,
-            "time": self.total_time
-        }
+        self.queue_level = queue_level
+        self.guaranteed_pct = guaranteed_pct
+        
+        # Estado de ejecución
+        self.remaining_time = burst_time
+        self.state = "NEW" # NEW, READY, RUNNING, WAITING, TERMINATED
+        
+        # Métricas
+        self.start_time = -1
+        self.completion_time = 0
+        self.turnaround_time = 0
+        self.waiting_time = 0
+        self.response_time = 0

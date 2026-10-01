@@ -1,72 +1,55 @@
 # gui/memory_window.py
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QTableWidget, QTableWidgetItem, QHeaderView
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QTabWidget, QLabel
 from PySide6.QtCore import Qt
+from gui.bitmap_widget import BitmapWidget
+from gui.linked_list_widget import LinkedListWidget
+from gui.buddy_widget import BuddyWidget
+from gui.virtual_memory_widget import VirtualMemoryWidget
 
 class MemoryWindow(QWidget):
     def __init__(self, kernel):
         super().__init__()
         self.kernel = kernel
-        self.setWindowTitle("Monitor de Memoria (Particiones)")
-        layout = QVBoxLayout(self)
+        self.setWindowTitle("Admon. Memoria")
+        self.resize(900, 600)
 
-        # Resumen de memoria
-        self.lbl_summary = QLabel("Cargando estado de memoria...")
-        self.lbl_summary.setStyleSheet("font-weight: bold; font-size: 14px; color: #2c3e50;")
-        layout.addWidget(self.lbl_summary)
+        main_layout = QVBoxLayout(self)
 
-        # Tabla visual
-        self.table = QTableWidget(0, 5)
-        self.table.setHorizontalHeaderLabels(["ID Partición", "Tamaño Total", "Estado", "PID Asignado", "Desperdicio (Frag.)"])
+        self.main_tabs = QTabWidget()
+        main_layout.addWidget(self.main_tabs)
+
+        # Pestaña A: Asignación Dinámica
+        self.tab_dynamic = QWidget()
+        self._init_dynamic_tab()
+        self.main_tabs.addTab(self.tab_dynamic, "Asignación dinámica")
+
+        # Pestaña B: Memoria Virtual
+        self.tab_virtual = QWidget()
+        self._init_virtual_tab()
+        self.main_tabs.addTab(self.tab_virtual, "Memoria virtual")
+
+    def _init_dynamic_tab(self):
+        layout = QVBoxLayout(self.tab_dynamic)
         
-        # Ajustar columnas automáticamente
-        header = self.table.horizontalHeader()
-        header.setSectionResizeMode(QHeaderView.Stretch)
-        self.table.setSelectionMode(QTableWidget.NoSelection)
-        layout.addWidget(self.table)
+        # Aquí es donde se crea la variable que te daba error
+        self.dynamic_subtabs = QTabWidget()
+        layout.addWidget(self.dynamic_subtabs)
 
-        # Nos suscribimos al evento del Kernel para redibujar la tabla en vivo
-        if self.kernel:
-            self.kernel.events.subscribe("PROCESS_CHANGED", self._refresh_view)
-            self._refresh_view()
+        # 1. Mapa de Bits (Vista real cargada)
+        self.sub_bitmap = BitmapWidget(self.kernel)
+        self.dynamic_subtabs.addTab(self.sub_bitmap, "Mapa de bits")
 
-    def _refresh_view(self, data=None):
-        if not self.kernel or not self.kernel.is_running:
-            self.lbl_summary.setText("El sistema está apagado.")
-            self.table.setRowCount(0)
-            return
+        # 2. Listas Ligadas (Placeholder para la Fase 6)
+        self.sub_linked = LinkedListWidget(self.kernel)
+        self.dynamic_subtabs.addTab(self.sub_linked, "Listas ligadas")
+
+        # 3. Buddy System (Placeholder para la Fase 7)
+        self.sub_buddy = BuddyWidget(self.kernel)
+        self.dynamic_subtabs.addTab(self.sub_buddy, "Sistema de asociados / Buddy System")        
+
+    def _init_virtual_tab(self):
+        layout = QVBoxLayout(self.tab_virtual)
+        layout.setContentsMargins(0, 0, 0, 0) # Para que ocupe todo el espacio
         
-        raw_data = self.kernel.memory_manager.get_raw_data()
-        self.table.setRowCount(len(raw_data))
-        
-        total_free = 0
-        total_wasted = 0
-
-        for row, part in enumerate(raw_data):
-            is_free = part["is_free"]
-            size = part["size"]
-            frag = part["fragmentation"]
-            
-            if is_free:
-                total_free += size
-            else:
-                total_wasted += frag
-
-            # Llenamos las celdas
-            self.table.setItem(row, 0, QTableWidgetItem(str(part["id"])))
-            self.table.setItem(row, 1, QTableWidgetItem(f"{size} MB"))
-            
-            estado_item = QTableWidgetItem("Libre" if is_free else "Ocupado")
-            if not is_free:
-                estado_item.setForeground(Qt.red)
-            else:
-                estado_item.setForeground(Qt.darkGreen)
-            self.table.setItem(row, 2, estado_item)
-            
-            pid_str = str(part["pid"]) if not is_free else "-"
-            self.table.setItem(row, 3, QTableWidgetItem(pid_str))
-            
-            frag_str = f"{frag} MB" if not is_free else "0 MB"
-            self.table.setItem(row, 4, QTableWidgetItem(frag_str))
-
-        # Actualizamos el resumen
-        self.lbl_summary.setText(f"RAM Libre Total: {total_free} MB   |   RAM Desperdiciada: {total_wasted} MB")
+        self.sub_virtual = VirtualMemoryWidget(self.kernel)
+        layout.addWidget(self.sub_virtual)
