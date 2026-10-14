@@ -10,6 +10,7 @@ from gui.terminal import Terminal
 from gui.file_manager import FileManager
 from gui.task_manager import TaskManager
 from gui.memory_window import MemoryWindow
+from gui.io_window import IOWindow
 
 class Desktop(QMainWindow):
     def __init__(self, kernel):
@@ -73,8 +74,9 @@ class Desktop(QMainWindow):
         btn_tasks = QPushButton("⚙ Administrador")
         btn_term = QPushButton("💻 Terminal")
         btn_mem = QPushButton("💾 Memoria")
+        btn_io = QPushButton("🔌 Hardware E/S") # NUEVO BOTÓN
 
-        for btn in [btn_files, btn_tasks, btn_term, btn_mem]:
+        for btn in [btn_files, btn_tasks, btn_term, btn_mem, btn_io]:
             btn.setStyleSheet(btn_style)
             layout.addWidget(btn)
             
@@ -89,6 +91,7 @@ class Desktop(QMainWindow):
         btn_tasks.clicked.connect(self.open_task_manager)
         btn_term.clicked.connect(self.open_terminal)
         btn_mem.clicked.connect(self.open_memory_window)
+        btn_io.clicked.connect(self.open_io_window)
 
     def _center_sub_window(self, sub_window):
         self.workspace.update() 
@@ -124,5 +127,12 @@ class Desktop(QMainWindow):
         win = MemoryWindow(self.kernel)
         sub = self.workspace.addSubWindow(win)
         sub.resize(900, 600)
+        self._center_sub_window(sub)
+        sub.show()
+
+    def open_io_window(self):
+        win = IOWindow(self.kernel)
+        sub = self.workspace.addSubWindow(win)
+        sub.resize(950, 600)
         self._center_sub_window(sub)
         sub.show()

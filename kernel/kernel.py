@@ -3,6 +3,7 @@ from kernel.events import EventBus
 from process.process_manager import ProcessManager
 from memory.memory_manager import MemoryManager
 from filesystem.filesystem import FileSystem
+from io_subsystem.device_manager import DeviceManager
 
 class Kernel:
     def __init__(self):
@@ -14,6 +15,7 @@ class Kernel:
         self.process_manager = ProcessManager()
         self.memory_manager = MemoryManager() # La memoria ahora se autogestiona
         self.fs = FileSystem()
+        self.device_manager = DeviceManager()
 
     def configure_scheduler(self, algorithm_name: str, params: dict):
         if self.is_running:
